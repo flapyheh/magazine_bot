@@ -22,11 +22,10 @@ class ProductsORM(Base):
     title : Mapped[str]
     description : Mapped[str]
     price : Mapped[int]
-    currency : Mapped[str]
     file_path : Mapped[str] = mapped_column(nullable=False)
     
 class OrdersORM(Base):
-    __tablename__ = "admins"
+    __tablename__ = "orders"
     id : Mapped[intpk]
     user_id : Mapped[int] = mapped_column(ForeignKey("users.id"))
     product_id : Mapped[int] = mapped_column(ForeignKey("products.id"))

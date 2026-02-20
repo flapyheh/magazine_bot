@@ -5,6 +5,7 @@ from typing import Type
 class BotSettings(BaseSettings):
     BOT_TOKEN: str
     PAYMENTS_PROVIDER_TOKEN: str
+    ADMIN_IDS: list[int] = Field(..., env='ADMIN_IDS')
 
     class Config:
         env_file = ".env"

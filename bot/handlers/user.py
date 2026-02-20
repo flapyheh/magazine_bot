@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart, Command
 
 from bot.lexicon.lexicon import RU_USER
-from bot.db.orm import add_user
+from bot.db.orm import add_user, select_all_products_from_orders
 from bot.keyboards.keyboards import create_catalog
 
 logger = logging.getLogger(__name__)
@@ -27,3 +27,16 @@ async def process_user_catalog_command(message : Message):
         text=RU_USER['catalog'],
         reply_markup=keyboard
     )
+    
+@user_router.message(Command('my_orders'))
+async def process_my_orders(message : Message):
+    products = await select_all_products_from_orders(message.from_user.id)
+    text = ''
+    product_titles = []
+    for product in products:
+        product_titles.append(product.title)
+    if products is None:
+        await message.answer('У вас нету заказов!')
+    else:
+        text = '\n'.join(f"{i+1}) {title}" for i, title in enumerate(product_titles))
+        await message.answer(f'Все ваши заказы:\n{text}')

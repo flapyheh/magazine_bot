@@ -3,7 +3,7 @@ import logging
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, PreCheckoutQuery, LabeledPrice, Message
 
-from bot.db.orm import select_product, insert_order, change_status_order
+from bot.db.orm import change_status_order, select_product, insert_order, select_product_in_order
 from bot.config.config import settings
 from bot.enums.enums import OrderStatuses
 from bot.lexicon.lexicon import RU_USER
@@ -24,7 +24,7 @@ async def process_product_button(call : CallbackQuery):
         )
     ]
     
-    await insert_order(
+    order_id = await insert_order(
         user_id=call.message.from_user.id,
         product_id=product_id,
         payment_id=None,
@@ -34,9 +34,9 @@ async def process_product_button(call : CallbackQuery):
     await call.message.answer_invoice(
         title=product.title,
         description=product.description,
-        payload=f"product_{product.id}",
+        payload=f"order_{order_id}",
         provider_token=settings.bot.PAYMENTS_PROVIDER_TOKEN,
-        currency=product.currency,
+        currency="RUB",
         prices=prices
     )
     await call.message.delete(call.message.message_id)
@@ -45,13 +45,20 @@ async def process_product_button(call : CallbackQuery):
 async def pre_checkout(precheckout : PreCheckoutQuery):
     await precheckout.answer(ok=True)
     
-@payments_router.message(lambda message: message.successful_payment)
+def is_successful_payment(message: Message) -> bool:
+    return message.successful_payment is not None
+
+@payments_router.message(is_successful_payment())
 async def process_successful_payment(message : Message):
     payment = message.successful_payment
-    product_id = int(payment.invoice_payload.split('_')[1])
+    order_id = int(payment.invoice_payload.split('_')[1])
     
-    await change_status_order(status=OrderStatuses.paid, payment_id=payment.telegram_payment_charge_id)
+    await change_status_order(order_id=order_id, status=OrderStatuses.paid, payment_id=payment.telegram_payment_charge_id)
     await message.answer(RU_USER['payment_success'])
     
-    product = await select_product(product_id)
-    await message.answer_document(document=product.file_path)
+    product = await select_product_in_order(order_id=order_id)
+    try:
+        with open(product.file_path, 'rb') as file:
+            await message.answer_document(document=file)
+    except Exception as e:
+        await message.answer(f"Ошибка при отправке файла {e}")
