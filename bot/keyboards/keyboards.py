@@ -10,7 +10,7 @@ async def create_catalog() -> InlineKeyboardMarkup:
     products = await select_all_products()
     for product in products:
         button = InlineKeyboardButton(
-            text=f'{product.title} - {product.price/100}{product.currency}',
+            text=f'{product.title} - {str(product.price/100)} рублей',
             callback_data=f'product_{product.id}'
         )
         buttons.append(button)

@@ -27,8 +27,8 @@ class ProductsORM(Base):
 class OrdersORM(Base):
     __tablename__ = "orders"
     id : Mapped[intpk]
-    user_id : Mapped[int] = mapped_column(ForeignKey("users.id"))
-    product_id : Mapped[int] = mapped_column(ForeignKey("products.id"))
+    user_id : Mapped[int] = mapped_column(BigInteger, ForeignKey("users.telegram_id"))
+    product_id : Mapped[int] = mapped_column(BigInteger, ForeignKey("products.id"))
     payment_id : Mapped[str] = mapped_column(nullable=True)
     status : Mapped[OrderStatuses]
     created_at : Mapped[create_at]

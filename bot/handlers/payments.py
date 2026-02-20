@@ -2,6 +2,7 @@ import logging
 
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, PreCheckoutQuery, LabeledPrice, Message
+from aiogram.types.input_file import FSInputFile
 
 from bot.db.orm import change_status_order, select_product, insert_order, select_product_in_order
 from bot.config.config import settings
@@ -14,7 +15,7 @@ payments_router = Router()
 @payments_router.callback_query()
 async def process_product_button(call : CallbackQuery):
     result = call.data.split('_')
-    product_id = result[1]
+    product_id = int(result[1])
     
     product = await select_product(product_id)
     prices = [
@@ -25,7 +26,7 @@ async def process_product_button(call : CallbackQuery):
     ]
     
     order_id = await insert_order(
-        user_id=call.message.from_user.id,
+        user_id=call.from_user.id,
         product_id=product_id,
         payment_id=None,
         status=OrderStatuses.pending
@@ -39,7 +40,7 @@ async def process_product_button(call : CallbackQuery):
         currency="RUB",
         prices=prices
     )
-    await call.message.delete(call.message.message_id)
+    await call.message.delete()
     
 @payments_router.pre_checkout_query()
 async def pre_checkout(precheckout : PreCheckoutQuery):
@@ -48,7 +49,7 @@ async def pre_checkout(precheckout : PreCheckoutQuery):
 def is_successful_payment(message: Message) -> bool:
     return message.successful_payment is not None
 
-@payments_router.message(is_successful_payment())
+@payments_router.message(is_successful_payment)
 async def process_successful_payment(message : Message):
     payment = message.successful_payment
     order_id = int(payment.invoice_payload.split('_')[1])
@@ -58,7 +59,8 @@ async def process_successful_payment(message : Message):
     
     product = await select_product_in_order(order_id=order_id)
     try:
-        with open(product.file_path, 'rb') as file:
-            await message.answer_document(document=file)
+        input_file = FSInputFile(path=product.file_path)
+        await message.answer_document(document=input_file)
     except Exception as e:
+        logger.critical(f'Продукт {product.id} не был выдан пользователю {message.from_user.id}')
         await message.answer(f"Ошибка при отправке файла {e}")

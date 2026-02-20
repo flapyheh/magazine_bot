@@ -7,6 +7,7 @@ from bot.handlers.user import user_router
 from bot.handlers.payments import payments_router
 from bot.config.config import settings
 from bot.db.orm import create_tables
+from bot.filters.AdminFilter import IsAdmin
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +27,10 @@ async def main() -> None:
     # Подключаем роутеры в нужном порядке
     logger.info("Including routers...")
     dp.include_routers(admin_router, payments_router, user_router)
+    admin_router.message.filter(IsAdmin())
 
     # Запускаем поллинг
     try:
-        await dp.start_polling(
-            bot, 
-            admin_ids=settings.bot.ADMIN_IDS
-        )
+        await dp.start_polling(bot)
     except Exception as e:
         logger.exception(e)

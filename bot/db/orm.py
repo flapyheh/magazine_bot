@@ -21,7 +21,7 @@ async def add_product(title : str, description : str, price : int, filepath : st
             title=title,
             description=description,
             price=price,
-            filepath=filepath
+            file_path=filepath
         )
         
         session.add(product)
@@ -52,9 +52,9 @@ async def select_all_products_from_orders(user_id : int) -> Optional[list[Produc
         query = (select(OrdersORM).where(and_(OrdersORM.user_id == user_id, OrdersORM.status == OrderStatuses.paid)))
         result = await session.execute(query)
         orders = result.scalars().all()
-        products : Optional[list[ProductsORM]] = None
+        products : Optional[list[ProductsORM]] = []
         for order in orders:
-            product = session.get(ProductsORM, order.product_id)
+            product = await session.get(ProductsORM, order.product_id)
             products.append(product)
         return products
             
@@ -65,7 +65,7 @@ async def add_user(id : int, username : str) -> None:
         query = (select(UsersORM).where(UsersORM.telegram_id == id))
         result = await session.execute(query)
         user = result.scalars().first()
-        if user is None:
+        if user is not None:
             logger.info(f'Пользователь {id} уже есть в БД')
             return
         

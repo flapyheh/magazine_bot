@@ -33,10 +33,10 @@ async def process_my_orders(message : Message):
     products = await select_all_products_from_orders(message.from_user.id)
     text = ''
     product_titles = []
-    for product in products:
-        product_titles.append(product.title)
-    if products is None:
+    if len(products) == 0:
         await message.answer('У вас нету заказов!')
     else:
+        for product in products:
+            product_titles.append(product.title)
         text = '\n'.join(f"{i+1}) {title}" for i, title in enumerate(product_titles))
         await message.answer(f'Все ваши заказы:\n{text}')
