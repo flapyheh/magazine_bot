@@ -21,7 +21,7 @@ class ProductsORM(Base):
     id : Mapped[intpk]
     title : Mapped[str]
     description : Mapped[str]
-    price : Mapped[int]
+    price : Mapped[int] = mapped_column(BigInteger)
     file_path : Mapped[str] = mapped_column(nullable=False)
     
 class OrdersORM(Base):
