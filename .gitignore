@@ -1,0 +1,6 @@
+.venv/
+.env
+__pycache__
+.pgadmin_data/
+.postgres_data/
+.notebook/
